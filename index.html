@@ -1,0 +1,1919 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Public Parking - Enterprise Smart Cloud Suite</title>
+
+  <!-- WEB APP MANIFEST FOR PWA INSTALLATION WITH CUSTOM LOGO AND IMMEDIATE LOAD -->
+  <link rel="manifest" href="data:application/manifest+json;charset=utf-8,%7B%22short_name%22%3A%22PublicParking%22%2C%22name%22%3A%22Public%20Parking%20Enterprise%20App%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2898%2F2898586.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fcdn-icons-png.flaticon.com%2F512%2F2898%2F2898586.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%2C%22start_url%22%3A%22.%22%2C%22background_color%22%3A%22%23fef08a%22%2C%22theme_color%22%3A%22%23eab308%22%2C%22display%22%3A%22standalone%22%2C%22orientation%22%3A%22portrait%22%7D">
+  <meta name="theme-color" content="#eab308">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Public Parking">
+
+  <!-- TAILWIND CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- HTML5 QR CODE SCANNER ENGINE -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <!-- QRCODE GENERATOR ENGINE -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- FONTAWESOME PRO ICONS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- FIREBASE COMPAT SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+  <!-- HTML2CANVAS FOR ONE-CLICK CARD DOWNLOAD -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- LEAFLET MAPS FOR REAL-TIME GPS TRACKING -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+    
+    * {
+      touch-action: manipulation;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: linear-gradient(180deg, #fffbeb 0%, #fef3c7 50%, #fde047 100%);
+      min-height: 100vh;
+      color: #1e293b;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      transition: background-color 1.5s ease, color 0.5s ease;
+    }
+
+    .yellow-card {
+      background: #ffffff;
+      border: 2px solid #fde047;
+      box-shadow: 0 12px 30px -8px rgba(234, 179, 8, 0.25);
+      transition: all 0.3s ease;
+    }
+
+    .yellow-gradient {
+      background: linear-gradient(135deg, #facc15 0%, #eab308 50%, #ca8a04 100%);
+    }
+
+    .btn-yellow {
+      background: #eab308;
+      color: #1e293b;
+      font-weight: 800;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn-yellow:hover {
+      background: #ca8a04;
+      color: #ffffff;
+    }
+
+    .btn-yellow:active {
+      transform: scale(0.96);
+    }
+
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    @media print {
+      body * { visibility: hidden; }
+      .printable-area, .printable-area * { visibility: visible; }
+      .printable-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 10px;
+      }
+      .no-print { display: none !important; }
+    }
+
+    #splashOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: linear-gradient(135deg, #fef08a 0%, #facc15 50%, #eab308 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.8s ease-out, visibility 0.8s;
+    }
+
+    .splash-logo-box {
+      animation: pulseGlow 2s infinite alternate;
+      width: 180px;
+      height: 180px;
+    }
+
+    @keyframes pulseGlow {
+      0% { transform: scale(0.95); box-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+      100% { transform: scale(1.08); box-shadow: 0 0 50px rgba(234, 179, 8, 1); }
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #fef9c3; }
+    ::-webkit-scrollbar-thumb { background: #eab308; border-radius: 10px; }
+
+    #digitalAppNotifyModal {
+      position: fixed;
+      inset: 0;
+      z-index: 100000;
+      background: rgba(254, 240, 138, 0.95);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease-in-out;
+    }
+
+    #digitalAppNotifyModal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .notify-card {
+      background: #ffffff;
+      border-radius: 28px;
+      padding: 30px 20px;
+      text-align: center;
+      max-width: 320px;
+      width: 100%;
+      box-shadow: 0 25px 50px -12px rgba(234, 179, 8, 0.4);
+      transform: scale(0.8);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    #digitalAppNotifyModal.active .notify-card {
+      transform: scale(1);
+    }
+
+    .banner-hero-bg {
+      background-size: cover;
+      background-position: center;
+      border-radius: 24px;
+      box-shadow: inset 0 0 0 2000px rgba(234, 179, 8, 0.35);
+    }
+
+    .atm-card-shape {
+      border-radius: 20px;
+      min-height: 250px;
+      height: auto;
+      background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+      border: 3px solid #eab308;
+      box-shadow: 0 10px 25px rgba(234, 179, 8, 0.3);
+      position: relative;
+      overflow: visible;
+    }
+
+    #liveGpsMapContainer {
+      height: 220px;
+      width: 100%;
+      border-radius: 20px;
+      border: 2px solid #eab308;
+      z-index: 10;
+    }
+
+    .universal-share-btn {
+      position: fixed;
+      bottom: 75px;
+      left: 12px;
+      z-index: 45;
+      background: #25d366;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 25px;
+      font-size: 12px;
+      font-weight: 800;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .qr-box-clear {
+      width: 100% !important;
+      max-width: 200px !important;
+      margin: 0 auto !important;
+      padding: 6px !important;
+      background: #ffffff !important;
+      border-radius: 12px !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+      overflow: hidden !important;
+    }
+
+    .qr-box-clear img, .qr-box-clear canvas {
+      margin: 0 auto !important;
+      display: block !important;
+      max-width: 100% !important;
+      height: auto !important;
+      object-fit: contain !important;
+    }
+
+    #managerReader, #customerCameraReader {
+      width: 100% !important;
+      min-height: 280px !important;
+      background: #000000 !important;
+      border-radius: 16px !important;
+      overflow: hidden !important;
+    }
+    #managerReader video, #customerCameraReader video {
+      width: 100% !important;
+      height: auto !important;
+      max-height: 320px !important;
+      object-fit: cover !important;
+      border-radius: 12px !important;
+    }
+
+    /* Mobile App Bottom Navigation Bar */
+    .mobile-bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-top: 2px solid #fde047;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 44;
+      padding: 0 8px;
+      box-shadow: 0 -5px 20px rgba(234, 179, 8, 0.2);
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .nav-item.active {
+      color: #ca8a04;
+      transform: translateY(-2px);
+    }
+    .nav-item i {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+  </style>
+</head>
+<body class="pb-24 select-none" onclick="enableAudioPlay()">
+
+  <button onclick="openUniversalShareModal()" class="universal-share-btn shadow-lg animate-bounce">
+    <i class="fa-brands fa-whatsapp text-base"></i> Share App
+  </button>
+
+  <div class="fixed bottom-20 right-4 z-50 flex items-center gap-2 bg-white/90 border-2 border-yellow-400 p-2 rounded-full shadow-2xl backdrop-blur-md">
+    <button onclick="toggleAudioMute()" id="audioMuteToggleBtn" class="w-10 h-10 rounded-full yellow-gradient text-slate-900 flex items-center justify-center font-black text-sm shadow-md">
+      <i id="audioIcon" class="fa-solid fa-volume-high"></i>
+    </button>
+    <button onclick="changeAudioVolume()" class="w-8 h-8 rounded-full bg-yellow-100 text-slate-800 flex items-center justify-center font-bold text-xs">
+      <i class="fa-solid fa-sliders"></i>
+    </button>
+  </div>
+
+  <div id="digitalAppNotifyModal">
+    <div class="notify-card border-4" id="notifyCardBorder">
+      <div id="notifyIconBox" class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 shadow-lg">
+        <i id="notifyIcon" class="fa-solid fa-check"></i>
+      </div>
+      <h3 id="notifyTitle" class="text-xl font-black text-slate-900 tracking-tight mb-2">SUCCESS</h3>
+      <p id="notifyMessage" class="text-xs font-bold text-slate-600 mb-6 leading-relaxed">Operation Completed</p>
+      <button onclick="closeDigitalNotification()" class="w-full btn-yellow py-3.5 rounded-2xl text-xs uppercase font-black shadow-lg">OK, GOT IT</button>
+    </div>
+  </div>
+
+  <div id="splashOverlay">
+    <div class="text-center space-y-4 px-6 flex flex-col items-center justify-center h-full w-full">
+      <div class="splash-logo-box rounded-3xl bg-white flex items-center justify-center text-6xl text-amber-600 font-black border-4 border-yellow-400 overflow-hidden shadow-2xl">
+        <img id="splashAdminLogoImg" src="" class="hidden w-full h-full object-cover">
+        <i id="splashAdminLogoIcon" class="fa-solid fa-square-p"></i>
+      </div>
+      <div class="space-y-1 mt-4">
+        <h1 class="text-3xl font-black text-slate-900 uppercase tracking-wider">PUBLIC PARKING</h1>
+        <p class="text-xs font-bold text-amber-900 uppercase tracking-widest flex items-center justify-center gap-1">
+          <i class="fa-solid fa-circle-check text-blue-600"></i> Verified Govt Approved License
+        </p>
+        <p id="splashGovtLicDisplay" class="text-xs font-mono font-black text-slate-800 bg-white/90 px-4 py-1.5 rounded-full border border-yellow-400 inline-block shadow-sm">
+          Govt Reg: WB-04-2026-0098421
+        </p>
+        <p class="text-[10px] text-slate-700 font-bold mt-2">Development: Kolkata West Bengal | Owner: জয়ন্ত কীর্তনীয়া</p>
+      </div>
+      <div class="pt-4 border-t border-amber-300 space-y-1 w-64">
+        <p class="text-xs font-extrabold text-slate-900">Enterprise Smart Automated Suite</p>
+        <p class="text-[10px] text-amber-950 font-semibold">Fast Check-In & Instant Verification</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="imageZoomModal" class="hidden fixed inset-0 bg-yellow-950/90 z-50 flex items-center justify-center p-4" onclick="closeImageZoom()">
+    <div class="relative max-w-full max-h-full flex flex-col items-center">
+      <img id="zoomedImgDisplay" src="" class="max-w-full max-h-[80vh] rounded-2xl object-contain border-4 border-yellow-400 shadow-2xl transition-transform duration-300">
+      <p class="text-slate-900 text-xs font-bold mt-3 bg-white px-4 py-2 rounded-full border border-yellow-400 shadow-lg"><i class="fa-solid fa-hand-pointer"></i> Tap anywhere to Zoom Out / Close</p>
+      <button class="absolute -top-10 right-0 text-white text-3xl font-black"><i class="fa-solid fa-circle-xmark"></i></button>
+    </div>
+  </div>
+
+  <div id="pwaBanner" class="hidden bg-yellow-400 text-slate-950 px-4 py-3 text-xs font-bold flex justify-between items-center shadow-xl border-b-2 border-yellow-500 sticky top-0 z-50">
+    <div class="flex items-center gap-2.5">
+      <div class="w-8 h-8 rounded-lg bg-white text-slate-950 flex items-center justify-center font-black shadow-sm overflow-hidden">
+        <img id="pwaBannerLogoImg" src="" class="hidden w-full h-full object-cover">
+        <i id="pwaBannerLogoIcon" class="fa-solid fa-download"></i>
+      </div>
+      <div>
+        <p class="text-slate-950 font-extrabold text-[11px] leading-tight">Install Public Parking App</p>
+        <p class="text-[9px] text-slate-800 font-medium">1-Click Direct Application Download</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="triggerPwaInstall()" class="bg-white text-slate-950 px-3.5 py-1.5 rounded-xl text-[11px] font-black uppercase shadow-md active:scale-95">INSTALL NOW</button>
+      <button onclick="dismissPwaBanner()" class="text-slate-700 hover:text-slate-950 px-1"><i class="fa-solid fa-xmark text-sm"></i></button>
+    </div>
+  </div>
+
+  <header id="mainHeaderNavbar" class="bg-white/95 glass-effect border-b-2 border-yellow-300 sticky top-0 z-40 px-4 py-2.5 shadow-sm flex justify-between items-center">
+    <div class="flex items-center gap-2.5 cursor-pointer" onclick="handleLogoClick()">
+      <div id="appNavLogoContainer" class="w-10 h-10 rounded-2xl yellow-gradient flex items-center justify-center font-black text-xl text-slate-950 shadow-md border border-yellow-200 overflow-hidden">
+        <img id="globalAppLogoImg" src="" class="hidden w-full h-full object-cover">
+        <i id="globalAppLogoIcon" class="fa-solid fa-square-p"></i>
+      </div>
+      <div>
+        <h1 id="appNavTitle" class="font-black text-xs sm:text-sm tracking-tight text-slate-900 uppercase flex items-center gap-1">
+          PUBLIC PARKING <i class="fa-solid fa-circle-check text-blue-600 text-xs" title="Govt Verified License"></i>
+        </h1>
+        <p class="text-[8px] text-amber-900 font-extrabold uppercase tracking-widest flex items-center gap-1">
+          <span>Lic: WB-04-2026-0098421</span>
+        </p>
+      </div>
+    </div>
+
+    <div id="portalDropdownWrapper" class="relative">
+      <select id="portalSelector" onchange="switchPortal(this.value)" class="bg-yellow-100 text-slate-900 text-[11px] font-black px-2.5 py-1.5 rounded-2xl border-2 border-yellow-400 outline-none shadow-sm cursor-pointer">
+        <option value="owner">🏢 Owner Portal</option>
+        <option value="manager">📱 Manager Portal</option>
+        <option value="agent">🕵 Agent Portal</option>
+        <option value="customer">🚗 Customer Portal</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-5">
+
+    <div class="bg-emerald-600 text-white p-2.5 rounded-2xl shadow-md text-center flex items-center justify-center gap-2 font-black text-[10px] uppercase">
+      <i class="fa-solid fa-shield-check text-yellow-300 text-sm"></i>
+      <span>Verified Govt Registration Lic: WB-04-2026-0098421 (Owner: জয়ন্ত কীর্তনীয়া)</span>
+    </div>
+
+    <div class="yellow-card p-4 rounded-3xl banner-hero-bg text-slate-900 relative overflow-hidden bg-yellow-200" style="background-image: url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=600&q=80');">
+      <div class="relative z-10 flex items-center gap-3 bg-white/80 p-3 rounded-2xl backdrop-blur-sm">
+        <div class="w-12 h-12 rounded-2xl bg-white border-2 border-yellow-400 flex items-center justify-center overflow-hidden shadow-md flex-shrink-0">
+          <img id="heroLogoImg" src="" class="hidden w-full h-full object-cover">
+          <i id="heroLogoIcon" class="fa-solid fa-square-p text-2xl text-amber-600"></i>
+        </div>
+        <div class="space-y-0.5">
+          <span class="bg-yellow-400 text-slate-950 font-black text-[9px] px-2.5 py-0.5 rounded-full uppercase border border-yellow-500 shadow-sm">AI Smart Parking Hub</span>
+          <h2 class="text-base font-black uppercase text-amber-950">Enterprise Smart Automated Lot</h2>
+          <p class="text-[10px] text-slate-800 font-bold">24/7 Monitored Multi-Lot Security System with Instant Digital Billing</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. OWNER PORTAL -->
+    <section id="ownerPortal" class="space-y-4">
+      <div id="ownerAuthCard" class="yellow-card p-5 rounded-3xl space-y-4">
+        <div class="flex justify-between items-center border-b-2 border-yellow-100 pb-3">
+          <div>
+            <h2 class="text-sm font-black text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-user-shield text-yellow-600"></i> Owner Portal Login / Register
+            </h2>
+            <p class="text-[10px] text-slate-500 font-bold">Access your dedicated parking system</p>
+          </div>
+          <span class="text-[9px] bg-yellow-200 text-slate-900 font-black px-2 py-0.5 rounded-full border border-yellow-300">OWNER</span>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="text-xs font-bold text-slate-700">Mobile Phone Number *</label>
+            <input type="tel" id="ownerAuthPhone" placeholder="10-digit mobile number" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none focus:border-yellow-500">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">Password *</label>
+            <input type="password" id="ownerAuthPass" placeholder="Enter password" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none focus:border-yellow-500">
+          </div>
+
+          <div class="flex gap-2 pt-2">
+            <button onclick="loginOwner()" class="w-1/2 btn-yellow py-3 rounded-2xl text-xs uppercase shadow-md flex justify-center items-center gap-1">
+              <i class="fa-solid fa-right-to-bracket"></i> Login
+            </button>
+            <button onclick="showOwnerRegisterForm()" class="w-1/2 bg-amber-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md">
+              Register New
+            </button>
+          </div>
+        </div>
+
+        <div id="ownerRegForm" class="hidden space-y-3 pt-3 border-t-2 border-yellow-100">
+          <p class="text-xs font-black text-slate-800">New Parking Owner Registration (7-Days Free Trial)</p>
+          <div>
+            <label class="text-xs font-bold text-slate-700">Parking Facility Name *</label>
+            <input type="text" id="ownerRegFacilityName" placeholder="e.g. Green Park Smart Parking" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">Parking Lot Numbers (Comma Separated) *</label>
+            <input type="text" id="ownerRegParkingLots" placeholder="Lot 1, Lot 2, Lot 3" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">Owner Full Name *</label>
+            <input type="text" id="ownerRegName" placeholder="Owner Full Name" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">GPS Map Location Pin / Manual Coordinates</label>
+            <div class="flex gap-2 mt-1">
+              <input type="text" id="ownerRegGpsCoords" placeholder="Auto Detect or Lat, Long" class="w-full p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+              <button type="button" onclick="autoDetectOwnerGps()" class="btn-yellow px-3 rounded-2xl text-xs font-black"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>
+            </div>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">UPI ID for Direct Customer Payment</label>
+            <input type="text" id="ownerRegUpi" placeholder="e.g. 8343088730@paytm" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">Referral Agent ID (Optional)</label>
+            <input type="text" id="ownerRegAgentRefId" placeholder="e.g. AGENT101" class="w-full mt-1 p-3 bg-white border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-700">Parking Banner / Logo Image</label>
+            <input type="file" id="ownerRegPhotoInput" accept="image/*" class="w-full mt-1 text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-yellow-400 file:text-slate-950">
+          </div>
+          <button onclick="registerOwnerAccount()" class="w-full yellow-gradient text-slate-950 font-black py-3.5 rounded-2xl text-xs uppercase shadow-lg">
+            Create Owner Account (7 Days Free)
+          </button>
+        </div>
+      </div>
+
+      <div id="ownerDashboard" class="hidden space-y-4">
+        <!-- AUDIO HELP BUTTON FOR OWNER PAGE -->
+        <div class="flex justify-end">
+          <button onclick="playOwnerAudioGuide()" class="btn-yellow px-3.5 py-2 rounded-2xl text-xs font-black shadow-md flex items-center gap-1.5 border border-yellow-500">
+            <i class="fa-solid fa-bullhorn text-sm text-slate-900"></i>
+            <span>অডিও সাহায্য (Guide)</span>
+          </button>
+        </div>
+
+        <div id="subscriptionBanner" class="p-4 rounded-3xl yellow-card bg-amber-50 border-2 border-amber-300 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-black text-slate-900 uppercase flex items-center gap-1.5">
+              <i class="fa-solid fa-crown text-amber-600"></i> Subscription Status (Base ₹13/Day + GST/Platform)
+            </span>
+            <span id="subBadge" class="text-[9px] bg-red-500 text-white font-black px-2.5 py-0.5 rounded-full">INACTIVE</span>
+          </div>
+          <p id="subExpiryText" class="text-xs font-bold text-slate-700">7 Days Trial / Subscription status</p>
+          <button onclick="showRechargeModal()" class="w-full btn-yellow py-2.5 rounded-xl text-xs uppercase shadow-md flex justify-center items-center gap-1">
+            <i class="fa-solid fa-bolt"></i> Recharge / Redirect to WhatsApp
+          </button>
+        </div>
+
+        <!-- NEW: PARKING TIME & EMERGENCY ON/OFF CONTROL PANEL -->
+        <div class="yellow-card p-5 rounded-3xl space-y-4 bg-yellow-50 border-2 border-amber-400">
+          <div class="border-b border-amber-200 pb-2 flex justify-between items-center">
+            <h3 class="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+              <i class="fa-solid fa-clock text-amber-600"></i> পার্কিং সময়সূচী ও কন্ট্রোল প্যানেল
+            </h3>
+            <span id="ownerParkingStatusBadge" class="text-[9px] bg-emerald-500 text-white font-black px-2.5 py-0.5 rounded-full">OPEN</span>
+          </div>
+
+          <div class="space-y-3 text-xs font-bold">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-700 block mb-1">ওপেনিং টাইম (Opening):</label>
+                <input type="time" id="ownerOpenTime" value="06:00" class="w-full p-2.5 border-2 border-yellow-400 rounded-xl bg-white font-black">
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-700 block mb-1">ক্লোজিং টাইম (Closing):</label>
+                <input type="time" id="ownerCloseTime" value="23:00" class="w-full p-2.5 border-2 border-yellow-400 rounded-xl bg-white font-black">
+              </div>
+            </div>
+
+            <button onclick="saveParkingScheduleTime()" class="w-full btn-yellow py-2.5 rounded-xl text-xs uppercase font-black shadow-sm">
+              <i class="fa-solid fa-floppy-disk"></i> সময়সূচী সেভ করুন
+            </button>
+
+            <hr class="border-amber-200">
+
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <label class="text-[11px] font-black text-slate-800">ইমার্জেন্সি বন্ধ সুইচের অবস্থা:</label>
+                <button onclick="toggleOwnerParkingEmergencyStatus()" id="ownerEmergencySwitchBtn" class="bg-emerald-600 text-white font-black text-[10px] px-3 py-1.5 rounded-xl uppercase shadow-sm">
+                  ON (পার্কিং চালু)
+                </button>
+              </div>
+
+              <div id="ownerOffReasonContainer" class="hidden space-y-2 pt-2 border-t border-amber-200">
+                <div>
+                  <label class="text-[10px] text-slate-700 block mb-1">কবে পার্কিং পুনরায় খুলবে?</label>
+                  <input type="text" id="ownerReopenDateInput" placeholder="যেমন: কাল সকাল ৮টায় / ১৫ অক্টোবর" class="w-full p-2.5 border-2 border-slate-300 rounded-xl bg-white text-xs font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-700 block mb-1">কেন বন্ধ রাখা হয়েছে?</label>
+                  <input type="text" id="ownerOffReasonInput" placeholder="যেমন: প্যান্ডেল তৈরির জন্য / রক্ষণাবেক্ষণ কাজ" class="w-full p-2.5 border-2 border-slate-300 rounded-xl bg-white text-xs font-bold">
+                </div>
+                <button onclick="saveOwnerOffNotice()" class="w-full bg-red-600 text-white font-black py-2.5 rounded-xl text-xs uppercase shadow-md">
+                  <i class="fa-solid fa-bullhorn"></i> নোটিশ সেভ করুন কাস্টমারের জন্য
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl space-y-2">
+          <h3 class="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+            <i class="fa-solid fa-signal text-emerald-600"></i> Manager Gate Live Status & Timing
+          </h3>
+          <div id="ownerManagerStatusList" class="space-y-1.5">
+            <p class="text-[11px] text-slate-400 font-bold">No managers configured.</p>
+          </div>
+        </div>
+
+        <div class="yellow-card p-5 rounded-3xl space-y-3">
+          <div class="border-b pb-2">
+            <h3 class="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+              <i class="fa-solid fa-indian-rupee-sign text-yellow-600"></i> Individual Vehicle Rate Manager
+            </h3>
+            <p class="text-[10px] text-slate-500 font-bold">সাইকেল, বাইক, অটো, অ্যাম্বুলেন্স, বাস, লরি এবং জেসিবি-র জন্য আলাদা আলাদা রেট সেট করুন</p>
+          </div>
+
+          <div class="space-y-3 text-xs font-bold">
+            <div>
+              <label class="text-[11px] text-slate-800 block mb-1">১. ক্যাটাগরি সিলেক্ট করুন (Vehicle Category):</label>
+              <select id="rateVehicleType" onchange="loadCategoryRatesToInputs()" class="w-full p-2.5 border-2 border-yellow-400 rounded-xl bg-yellow-50 outline-none font-black text-slate-900">
+                <option value="cycle">🚲 সাইকেল (Cycle)</option>
+                <option value="bike">🛵 বাইক / স্কুটি (Bike / Scooter)</option>
+                <option value="toto">🛺 টোটো / অটো (Toto / Auto)</option>
+                <option value="ambulance">🚑 অ্যাম্বুলেন্স (Ambulance)</option>
+                <option value="car">🚗 চার চাকা / প্রাইভেট কার (4-Wheeler Car)</option>
+                <option value="bus">🚌 বাস (Bus)</option>
+                <option value="truck">🚛 লরি / কমার্শিয়াল (Lorry / Truck)</option>
+                <option value="jcb">🚜 জেসিবি / হেভি ভেহিকেল (JCB / Heavy)</option>
+              </select>
+            </div>
+
+            <div class="p-3 bg-yellow-50 rounded-2xl border border-yellow-300 space-y-2">
+              <p id="currentEditingCategoryLabel" class="text-xs font-black text-amber-900 uppercase">রেট সেট করুন:</p>
+              
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="text-[10px] text-slate-600">১ ঘণ্টা (1 Hour Rate)</label>
+                  <input type="number" id="rate1Hr" value="10" min="10" class="w-full p-2 border-2 border-slate-200 rounded-xl font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-600">১ রাত (1 Night Rate)</label>
+                  <input type="number" id="rate1Night" value="50" class="w-full p-2 border-2 border-slate-200 rounded-xl font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-600">১ দিন / ২৪ ঘণ্টা (1 Day)</label>
+                  <input type="number" id="rate1Day" value="100" class="w-full p-2 border-2 border-slate-200 rounded-xl font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-600">৭ দিন (7 Days Rate)</label>
+                  <input type="number" id="rate7Days" value="600" class="w-full p-2 border-2 border-slate-200 rounded-xl font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-600">১৫ দিন (15 Days Rate)</label>
+                  <input type="number" id="rate15Days" value="1100" class="w-full p-2 border-2 border-slate-200 rounded-xl font-bold">
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-600">১ মাস (1 Month Rate)</label>
+                  <input type="number" id="rate1Month" value="2000" class="w-full p-2 border-2 border-slate-200 rounded-xl font-bold">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="saveParkingRates()" class="w-full btn-yellow py-3 rounded-2xl text-xs uppercase font-black shadow-md">
+            <i class="fa-solid fa-floppy-disk"></i> এই ক্যাটাগরির রেট সেভ করুন
+          </button>
+        </div>
+
+        <!-- UPDATED: ENGLISH TRIPLE WALLET ANALYTICS PANEL WITH REALTIME COUNTDOWN TIMER (06:00 AM - 12:00 AM Midnight) -->
+        <div class="yellow-card p-5 rounded-3xl space-y-4 bg-gradient-to-br from-yellow-50 to-white">
+          <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <i class="fa-solid fa-wallet text-yellow-600"></i> Realtime Parking Analytics & Shifts
+            </h3>
+            <button onclick="downloadOwnerReportAsImage()" class="text-[10px] bg-amber-600 text-white font-black px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
+              <i class="fa-solid fa-image"></i> Download Report
+            </button>
+          </div>
+
+          <!-- Printable / Downloadable Area for Photo Download -->
+          <div id="ownerReportCardToDownload" class="p-4 bg-white rounded-2xl border-2 border-yellow-400 space-y-3">
+            <div class="text-center border-b border-yellow-200 pb-2">
+              <h4 id="reportFacilityTitle" class="font-black text-xs text-slate-900 uppercase">PUBLIC PARKING DASHBOARD REPORT</h4>
+              <p class="text-[9px] text-slate-500 font-bold uppercase">Daily Shift Wallet (06:00 AM to 12:00 AM Midnight Reset)</p>
+            </div>
+
+            <!-- Triple Wallet Cards Fully In English -->
+            <div class="space-y-2">
+              <div class="p-3 bg-yellow-100 rounded-2xl border border-yellow-300">
+                <div class="flex justify-between items-center">
+                  <p class="text-[10px] text-amber-950 font-black uppercase"><i class="fa-solid fa-clock text-amber-700"></i> 1. Current Daily Shift Wallet</p>
+                  <span id="shiftWalletTimerBadge" class="text-[9px] bg-amber-400 font-mono font-black px-2 py-0.5 rounded-full">Reset Countdown: --:--:--</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1 mt-2 text-center">
+                  <div class="bg-white p-1.5 rounded-xl border border-yellow-200">
+                    <p class="text-[8px] font-bold text-slate-500 uppercase">IN Vehicles</p>
+                    <p id="shiftInVehicles" class="text-sm font-black text-blue-600">0</p>
+                  </div>
+                  <div class="bg-white p-1.5 rounded-xl border border-yellow-200">
+                    <p class="text-[8px] font-bold text-slate-500 uppercase">OUT Vehicles</p>
+                    <p id="shiftOutVehicles" class="text-sm font-black text-red-600">0</p>
+                  </div>
+                  <div class="bg-white p-1.5 rounded-xl border border-yellow-200">
+                    <p class="text-[8px] font-bold text-slate-500 uppercase">Shift Revenue</p>
+                    <p id="shiftWalletIncome" class="text-sm font-black text-emerald-600">₹0</p>
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-1 mt-1 text-center">
+                  <div class="bg-white p-1 rounded-lg border border-yellow-200">
+                    <p class="text-[7px] font-bold text-slate-500 uppercase">Cash Collection</p>
+                    <p id="shiftCashIncome" class="text-xs font-black text-slate-800">₹0</p>
+                  </div>
+                  <div class="bg-white p-1 rounded-lg border border-yellow-200">
+                    <p class="text-[7px] font-bold text-slate-500 uppercase">Online UPI</p>
+                    <p id="shiftOnlineIncome" class="text-xs font-black text-slate-800">₹0</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <div class="p-2.5 bg-blue-50 rounded-2xl border border-blue-200">
+                  <p class="text-[9px] font-black text-blue-900 uppercase"><i class="fa-solid fa-building-columns"></i> 2. Previous Day Shift 1 Wallet</p>
+                  <p id="prevWallet1Income" class="text-base font-black text-blue-700 mt-1">₹0</p>
+                  <p id="prevWallet1Stats" class="text-[8px] font-bold text-slate-600 uppercase">IN: 0 | OUT: 0</p>
+                </div>
+                <div class="p-2.5 bg-purple-50 rounded-2xl border border-purple-200">
+                  <p class="text-[9px] font-black text-purple-900 uppercase"><i class="fa-solid fa-vault"></i> 3. Previous Day Shift 2 Wallet</p>
+                  <p id="prevWallet2Income" class="text-base font-black text-purple-700 mt-1">₹0</p>
+                  <p id="prevWallet2Stats" class="text-[8px] font-bold text-slate-600 uppercase">IN: 0 | OUT: 0</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-yellow-100">
+              <div class="p-2.5 bg-slate-50 rounded-2xl border border-slate-200 text-center">
+                <p class="text-[9px] text-slate-500 font-bold uppercase">Active Parked Vehicles</p>
+                <p id="statActiveVehiclesCount" class="text-lg font-black text-blue-600">0</p>
+              </div>
+              <div class="p-2.5 bg-emerald-50 rounded-2xl border border-emerald-200 text-center">
+                <p class="text-[9px] text-slate-600 font-bold uppercase">Total Lifetime Revenue</p>
+                <p id="statTotalIncome" class="text-lg font-black text-emerald-700">₹0</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-2 border-t border-yellow-100 space-y-2">
+            <div class="flex justify-between items-center">
+              <p class="text-xs font-black text-slate-800 flex items-center gap-1">
+                <i class="fa-solid fa-clock-rotate-left text-yellow-600"></i> Vehicle Log (Auto Delete After 2 Days)
+              </p>
+              <button onclick="clearAllVehicleHistory()" class="text-[9px] bg-red-100 text-red-700 font-black px-2 py-1 rounded-lg hover:bg-red-200">
+                <i class="fa-solid fa-trash"></i> Clear All History
+              </button>
+            </div>
+            <div id="ownerVehicleHistoryList" class="space-y-2 max-h-52 overflow-y-auto pr-1">
+              <p class="text-[11px] text-slate-400 font-bold">No history recorded.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="yellow-card p-5 rounded-3xl space-y-3 text-center printable-area">
+          <h3 class="text-xs font-black text-slate-900 uppercase tracking-wider flex justify-center items-center gap-2">
+            <i class="fa-solid fa-qrcode text-yellow-600"></i> Public Gate Print Banner
+          </h3>
+          
+          <div class="bg-red-600 text-white p-3 rounded-2xl font-black text-xs uppercase shadow-md animate-pulse">
+            🚨 WARNING: স্ক্যান করো আর গাড়ি পার্কিং করাও! স্ক্যান ছাড়া গাড়ি পার্কিং হবে না!
+          </div>
+
+          <div class="bg-white p-4 rounded-2xl flex flex-col items-center justify-center border-4 border-yellow-400 shadow-inner my-2">
+            <div class="w-10 h-10 mb-2 rounded-xl border border-yellow-400 flex items-center justify-center overflow-hidden">
+              <img id="gateBannerLogoImg" src="" class="hidden w-full h-full object-cover">
+              <i id="gateBannerLogoIcon" class="fa-solid fa-square-p text-xl text-amber-600"></i>
+            </div>
+            <h4 id="bannerParkingName" class="font-black text-sm text-slate-900 uppercase">PUBLIC PARKING</h4>
+            <div id="ownerPublicQrBox" class="qr-box-clear my-2"></div>
+            <p class="text-[9px] font-mono text-slate-600 mt-1">NO MANUAL BOOKING PERMITTED</p>
+          </div>
+
+          <button onclick="window.print()" class="no-print w-full bg-amber-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md">
+            <i class="fa-solid fa-print"></i> Download / Print Stylish Gate QR Banner
+          </button>
+        </div>
+
+        <div class="yellow-card p-5 rounded-3xl space-y-3">
+          <h3 class="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+            <i class="fa-solid fa-user-gear text-yellow-600"></i> Create Gate Manager Account
+          </h3>
+          <input type="text" id="newMgrName" placeholder="Manager Full Name *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="tel" id="newMgrPhone" placeholder="Manager Mobile Phone *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="number" id="newMgrAge" placeholder="Age *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="text" id="newMgrAddress" placeholder="Address & Location *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="password" id="newMgrPass" placeholder="Manager Login Password *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <div>
+            <label class="text-[11px] font-bold text-slate-700 block mb-1">Manager Photo *</label>
+            <input type="file" id="newMgrPhoto" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-yellow-400">
+          </div>
+
+          <button onclick="createManagerAccount()" class="w-full bg-amber-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md">
+            <i class="fa-solid fa-id-badge"></i> Create Manager Account
+          </button>
+        </div>
+
+        <button onclick="logoutOwner()" class="w-full bg-red-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout Owner
+        </button>
+      </div>
+    </section>
+
+    <!-- 2. MANAGER PORTAL -->
+    <section id="managerPortal" class="hidden space-y-4">
+      <div id="managerAuthCard" class="yellow-card p-5 rounded-3xl space-y-4">
+        <div class="flex justify-between items-center border-b-2 border-yellow-100 pb-2">
+          <h2 class="text-sm font-black text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-lock text-yellow-600"></i> Gate Manager Login
+          </h2>
+          <span class="text-[9px] bg-yellow-300 font-black px-2.5 py-0.5 rounded-full border border-yellow-400">GATE</span>
+        </div>
+
+        <div class="space-y-3">
+          <input type="tel" id="mgrLoginPhone" placeholder="Manager Mobile Phone" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="password" id="mgrLoginPass" placeholder="Manager Password" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <button onclick="loginManager()" class="w-full btn-yellow py-3.5 rounded-2xl text-xs uppercase shadow-md">
+            Login Gate Manager
+          </button>
+        </div>
+      </div>
+
+      <div id="managerDashboard" class="hidden space-y-4">
+        <!-- AUDIO HELP BUTTON FOR MANAGER PAGE -->
+        <div class="flex justify-end">
+          <button onclick="playManagerAudioGuide()" class="btn-yellow px-3.5 py-2 rounded-2xl text-xs font-black shadow-md flex items-center gap-1.5 border border-yellow-500">
+            <i class="fa-solid fa-bullhorn text-sm text-slate-900"></i>
+            <span>অডিও গাইড (সহায়তা)</span>
+          </button>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl flex justify-between items-center bg-yellow-50">
+          <div>
+            <h4 class="font-black text-xs text-slate-900 uppercase">Gate Duty Status</h4>
+            <p id="mgrStatusLabelText" class="text-[10px] text-emerald-700 font-black">● Currently ONLINE</p>
+          </div>
+          <button onclick="toggleManagerOnlineStatus()" id="mgrStatusToggleBtn" class="bg-emerald-600 text-white text-xs font-black px-4 py-2 rounded-xl shadow-md uppercase">
+            Go Offline
+          </button>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <img id="mgrProfileImg" src="https://via.placeholder.com/60" class="w-12 h-12 rounded-2xl object-cover border-2 border-yellow-400 shadow-sm cursor-pointer" onclick="zoomImage(this.src)">
+            <div>
+              <h3 id="mgrProfileName" class="font-black text-xs text-slate-900">Manager Name</h3>
+              <p id="mgrFacilityTitle" class="text-[10px] text-slate-500 font-bold">Active Facility</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="showManagerIdModal()" class="bg-yellow-400 text-slate-950 text-[10px] font-black px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1">
+              <i class="fa-solid fa-id-card"></i> ID Card
+            </button>
+            <button onclick="logoutManager()" class="bg-red-100 text-red-700 text-[10px] font-black px-2.5 py-1.5 rounded-xl">Logout</button>
+          </div>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl space-y-2 border-2 border-amber-400 bg-amber-50">
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-black text-slate-900 uppercase">Active Scanner Mode</span>
+            <span id="scannerModeBadge" class="bg-blue-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full uppercase animate-pulse">1. ENTRY / EXIT SCANNER</span>
+          </div>
+          <p id="scannerModeDesc" class="text-[10px] text-slate-700 font-bold">ক্যামেরা বা ফাইল থেকে ফটো আপলোড করে QR স্ক্যান করা যাবে। ১ম স্ক্যানে IN এবং ২য় স্ক্যানে OUT দেখাবে।</p>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl space-y-2">
+          <label class="text-xs font-bold text-slate-800"><i class="fa-solid fa-key text-yellow-600"></i> Manual Exit with 4-Digit Passcode / OTP</label>
+          <div class="flex gap-2">
+            <input type="password" id="mgrSecretPassSearchInput" maxlength="4" placeholder="Enter 4-Digit OTP/Passcode" class="w-full p-3 bg-slate-50 border-2 border-yellow-300 rounded-2xl text-xs font-bold outline-none">
+            <button onclick="searchVehicleBySecretPasscode()" class="btn-yellow px-4 rounded-2xl text-xs uppercase shadow-md font-black">Manual Exit</button>
+          </div>
+          <p class="text-[10px] text-slate-500 font-semibold">ম্যানেজার সরাসরি এক্সিট বাটনে ক্লিক করে গাড়ি বের করতে পারবে না, কাস্টমারের থেকে ৪ সংখ্যার ওটিপি বা পাসওয়ার্ড নিয়ে ইনপুট করতে হবে।</p>
+        </div>
+
+        <!-- MANAGER SCANNER PANEL WITH FILE UPLOAD FEATURE -->
+        <div class="yellow-card p-5 rounded-3xl space-y-4">
+          <div class="flex gap-2">
+            <button id="startManagerScanBtn" onclick="toggleCameraScanner()" class="w-1/2 yellow-gradient text-slate-950 font-black py-4 rounded-2xl text-xs uppercase shadow-md flex justify-center items-center gap-2">
+              <i class="fa-solid fa-camera text-base"></i> Launch QR Camera Scanner
+            </button>
+            <label class="w-1/2 bg-amber-600 text-white font-black py-4 rounded-2xl text-xs uppercase shadow-md flex justify-center items-center gap-2 cursor-pointer text-center">
+              <i class="fa-solid fa-file-image text-base"></i> Upload QR Photo
+              <input type="file" id="managerQrFileInput" accept="image/*" onchange="scanQrFromImageFile(this)" class="hidden">
+            </label>
+          </div>
+
+          <div id="managerReader" class="overflow-hidden rounded-2xl border-4 border-yellow-400 hidden shadow-inner bg-yellow-100"></div>
+        </div>
+
+        <div id="exitPaymentCard" class="hidden yellow-card p-5 rounded-3xl border-4 border-yellow-400 space-y-4">
+          <div class="flex justify-between items-center border-b pb-2">
+            <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+              <i class="fa-solid fa-receipt text-yellow-600"></i> Exit Billing & OTP Verification
+            </h3>
+            <span class="text-[9px] bg-red-100 text-red-800 font-black px-2 py-0.5 rounded-full">PAYMENT DUE</span>
+          </div>
+
+          <div id="exitSummaryContent" class="text-xs space-y-2 bg-yellow-50 p-4 rounded-2xl border border-yellow-200"></div>
+
+          <div class="p-4 bg-amber-500 rounded-2xl text-center text-slate-950 space-y-1 shadow-inner border-2 border-yellow-600">
+            <p class="text-[10px] text-slate-900 font-bold uppercase tracking-widest">Total Payable Amount</p>
+            <p id="managerLargeAmountDisplay" class="text-3xl font-black">₹0</p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-bold text-slate-800 block">Select Payment Mode:</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button onclick="selectPaymentMode('CASH')" id="btnPayCash" class="py-3 bg-amber-400 text-black font-black text-xs rounded-xl border-2 border-yellow-600 shadow-md flex items-center justify-center gap-1">
+                💵 Cash Collect
+              </button>
+              <button onclick="selectPaymentMode('UPI')" id="btnPayUpi" class="py-3 bg-slate-100 text-black font-black text-xs rounded-xl border-2 border-slate-300 flex items-center justify-center gap-1">
+                📱 UPI Scanner
+              </button>
+            </div>
+          </div>
+
+          <div id="exitUpiQrContainer" class="hidden bg-white p-3 rounded-2xl border-2 border-yellow-400 text-center space-y-2">
+            <p class="text-[10px] font-black text-slate-700">Scan UPI QR Code to Pay Total Bill</p>
+            <div class="flex justify-center qr-box-clear" id="exitUpiQrBox"></div>
+          </div>
+
+          <button onclick="confirmVehicleExitProcess()" class="w-full bg-emerald-600 text-white font-black py-4 rounded-2xl text-xs uppercase shadow-xl flex justify-center items-center gap-2">
+            <i class="fa-solid fa-circle-check text-sm"></i> Confirm Payment Received & Exit Vehicle (Delete Data)
+          </button>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl space-y-3">
+          <div class="flex justify-between items-center border-b border-yellow-100 pb-2">
+            <h3 class="font-black text-xs text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-car-side text-yellow-600"></i> Live Parked Vehicles
+            </h3>
+            <span id="liveVehicleCounter" class="bg-yellow-400 text-slate-950 text-[10px] px-2.5 py-0.5 rounded-full font-black">0 Vehicles</span>
+          </div>
+          
+          <div id="liveParkingLogsList" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+            <p class="text-xs text-slate-400 text-center py-6 font-bold">No active vehicles currently parked.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. PUBLIC PARKING AGENT PORTAL -->
+    <section id="agentPortal" class="hidden space-y-4">
+      <div id="agentAuthCard" class="yellow-card p-5 rounded-3xl space-y-4">
+        <div class="flex justify-between items-center border-b-2 border-yellow-100 pb-2">
+          <h2 class="text-sm font-black text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-secret text-yellow-600"></i> Public Parking Agent Portal
+          </h2>
+          <span class="text-[9px] bg-yellow-300 font-black px-2.5 py-0.5 rounded-full border border-yellow-400">AGENT</span>
+        </div>
+
+        <div id="agentLoginForm" class="space-y-3">
+          <input type="tel" id="agentLoginPhone" placeholder="Agent Mobile Phone *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="password" id="agentLoginPass" placeholder="Agent Password *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <button onclick="loginAgentAccount()" class="w-full btn-yellow py-3.5 rounded-2xl text-xs uppercase font-black shadow-md">
+            Login Agent Portal
+          </button>
+          <button onclick="toggleAgentRegForm()" class="w-full bg-amber-100 text-amber-900 font-extrabold py-2.5 rounded-2xl text-xs uppercase">
+            New Agent Registration
+          </button>
+        </div>
+
+        <div id="agentRegForm" class="hidden space-y-3 border-t-2 border-yellow-100 pt-3">
+          <p class="text-xs font-black text-slate-800">Apply For Agent ID Card (Pending Admin Approval)</p>
+          <input type="text" id="newAgentName" placeholder="Agent Full Name *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="tel" id="newAgentPhone" placeholder="Mobile Phone Number *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="number" id="newAgentAge" placeholder="Age *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="text" id="newAgentLocation" placeholder="Full Location / Address *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          <input type="password" id="newAgentPass" placeholder="Create Login Password *" class="w-full p-3 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          
+          <div>
+            <label class="text-[11px] font-bold text-slate-700 block mb-1">Agent Selfie / Photo Upload *</label>
+            <input type="file" id="newAgentPhoto" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-yellow-400 font-bold">
+          </div>
+
+          <button onclick="registerAgentAccount()" class="w-full yellow-gradient text-slate-950 font-black py-3.5 rounded-2xl text-xs uppercase shadow-lg">
+            Submit Agent Registration
+          </button>
+          <button onclick="toggleAgentRegForm()" class="w-full text-slate-500 font-bold text-xs py-1">Back to Login</button>
+        </div>
+      </div>
+
+      <div id="agentDashboard" class="hidden space-y-4">
+        <div class="yellow-card p-4 rounded-3xl flex justify-between items-center">
+          <div class="flex items-center gap-3">
+            <img id="agentProfileImg" src="https://via.placeholder.com/60" class="w-12 h-12 rounded-2xl object-cover border-2 border-yellow-400 shadow-sm cursor-pointer" onclick="zoomImage(this.src)">
+            <div>
+              <h3 id="agentProfileName" class="font-black text-xs text-slate-900">Agent Name</h3>
+              <p id="agentProfileId" class="text-[10px] text-amber-900 font-black">ID: AGENT---</p>
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="showAgentDigitalIdCardModal()" class="bg-yellow-400 text-slate-950 text-[10px] font-black px-3 py-2 rounded-xl shadow-sm">
+              <i class="fa-solid fa-id-card"></i> ATM ID Card
+            </button>
+            <button onclick="logoutAgentAccount()" class="bg-red-100 text-red-700 text-[10px] font-black px-2.5 py-2 rounded-xl">Logout</button>
+          </div>
+        </div>
+
+        <div class="yellow-card p-5 rounded-3xl space-y-3 bg-gradient-to-br from-yellow-100 to-white">
+          <div class="flex justify-between items-center">
+            <h3 class="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+              <i class="fa-solid fa-share-nodes text-yellow-600"></i> My Referral System
+            </h3>
+            <span class="text-[9px] bg-yellow-300 text-slate-950 font-black px-2 py-0.5 rounded-full">₹3/Parking Commission</span>
+          </div>
+          <p class="text-[10px] text-slate-600 font-bold">হোয়াটসঅ্যাপে শেয়ার করলে কাস্টম মেসেজ সহ কোম্পানির মালিকের মেসেজে সেন্ড হবে এবং ইউনিক রেফারেল কোড দিয়ে সরাসরি রেজিস্ট্রেশন করা যাবে!</p>
+
+          <div class="flex gap-2">
+            <input type="text" id="agentShareLinkInput" readonly class="w-full p-2.5 bg-white border-2 border-yellow-300 rounded-xl text-xs font-mono font-bold text-slate-800">
+            <button onclick="copyAgentShareLink()" class="btn-yellow px-3 rounded-xl text-xs font-black uppercase"><i class="fa-solid fa-copy"></i></button>
+          </div>
+
+          <button onclick="shareAgentLinkWhatsapp()" class="w-full bg-emerald-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md flex items-center justify-center gap-2">
+            <i class="fa-brands fa-whatsapp text-base"></i> Share Referral On WhatsApp
+          </button>
+        </div>
+
+        <div class="yellow-card p-5 rounded-3xl space-y-3">
+          <div class="flex justify-between items-center border-b pb-2">
+            <div>
+              <p class="text-[10px] font-bold text-slate-500 uppercase">My Wallet Balance (মাসে একবার উইথড্র)</p>
+              <h2 id="agentWalletBalance" class="text-2xl font-black text-emerald-600">₹0</h2>
+            </div>
+            <button onclick="triggerAgentWithdrawal()" class="btn-yellow px-4 py-2 rounded-2xl text-xs font-black uppercase shadow-md">
+              <i class="fa-solid fa-hand-holding-dollar"></i> Withdraw
+            </button>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-[11px] font-bold text-slate-700">Submit UPI ID For Payouts:</label>
+            <div class="flex gap-2">
+              <input type="text" id="agentUpiInput" placeholder="e.g. 8343088730@paytm" class="w-full p-2.5 bg-yellow-50 border-2 border-yellow-300 rounded-xl text-xs font-bold">
+              <button onclick="saveAgentUpi()" class="btn-yellow px-3 rounded-xl text-xs font-black uppercase">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="yellow-card p-4 rounded-3xl space-y-3">
+          <h3 class="text-xs font-black text-slate-900 uppercase flex items-center gap-2">
+            <i class="fa-solid fa-square-parking text-yellow-600"></i> My Referred Parkings Status (Active & Pending Subscriptions)
+          </h3>
+          <div id="agentReferredParkingsList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+            <p class="text-xs text-slate-400 text-center py-4">No referred parkings yet.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. CUSTOMER PORTAL -->
+    <section id="customerPortal" class="hidden space-y-4">
+      <!-- AUDIO HELP BUTTON FOR CUSTOMER PANEL -->
+      <div class="flex justify-end">
+        <button onclick="playCustomerAudioGuide()" class="btn-yellow px-3.5 py-2 rounded-2xl text-xs font-black shadow-md flex items-center gap-1.5 border border-yellow-500">
+          <i class="fa-solid fa-bullhorn text-sm text-slate-900"></i>
+          <span>অডিও সাহায্য (Hindi / Bengali)</span>
+        </button>
+      </div>
+
+      <!-- PARKING EMERGENCY CLOSED / OFF NOTIFICATION POPUP FOR CUSTOMER -->
+      <div id="customerParkingClosedNoticeModal" class="hidden fixed inset-0 bg-yellow-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-3xl border-4 border-red-500 w-full max-w-sm text-center space-y-4 shadow-2xl animate-bounce">
+          <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-3xl mx-auto border-2 border-red-400">
+            <i class="fa-solid fa-ban"></i>
+          </div>
+          <h3 class="text-lg font-black text-slate-900 uppercase">আজকে পার্কিং সার্ভিস সম্পূর্ণ বন্ধ রয়েছে!</h3>
+          <div class="bg-red-50 p-3 rounded-2xl border border-red-200 text-xs space-y-1 text-slate-800">
+            <p id="custClosedNoticeDateText" class="font-bold text-red-700">পুনরায় খুলবে: --</p>
+            <p id="custClosedNoticeReasonText" class="font-semibold text-slate-600">কারণ: --</p>
+          </div>
+          <button onclick="closeCustomerClosedNoticeModal()" class="w-full bg-slate-900 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md">
+            ঠিক আছে, বুঝতে পেরেছি
+          </button>
+        </div>
+      </div>
+
+      <div class="yellow-card rounded-3xl overflow-hidden shadow-md">
+        <div id="custBannerDisplay" class="h-36 yellow-gradient p-4 flex items-end relative" style="background-image: url('https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=600&q=80'); background-size: cover;">
+          <div class="flex items-center gap-3 relative z-10 bg-white/90 p-2.5 rounded-2xl w-full">
+            <img id="custLogoDisplay" src="https://via.placeholder.com/80" class="w-16 h-16 rounded-2xl object-cover border-2 border-yellow-400 shadow-md bg-white">
+            <div>
+              <h2 id="custFacilityTitle" class="font-black text-sm text-slate-950 uppercase leading-tight">PUBLIC PARKING</h2>
+              <p class="text-[10px] text-slate-900 font-extrabold flex items-center gap-1">
+                <i class="fa-solid fa-shield-halved"></i> 24/7 Safe & Monitored Parking
+              </p>
+              <p id="custHeaderAddress" class="text-[9px] text-slate-900 font-bold">Address: Loading...</p>
+              <p id="custOperatingTimeNotice" class="text-[9px] text-amber-900 font-black mt-0.5">সময়সূচী: 06:00 AM - 11:00 PM</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nearby Parkings Banner Scroll Bar -->
+      <div class="yellow-card p-3 rounded-3xl space-y-2">
+        <p class="text-xs font-black text-slate-900 uppercase flex items-center gap-1.5">
+          <i class="fa-solid fa-map-location-dot text-amber-600"></i> NearBy Public Parkings (নিয়ারবাই পার্কিং)
+        </p>
+        <div id="nearbyParkingsScrollContainer" class="flex gap-2 overflow-x-auto pb-1">
+          <p class="text-[10px] text-slate-500 font-bold p-2">Loading nearby locations...</p>
+        </div>
+      </div>
+
+      <div class="bg-red-600 text-white p-3.5 rounded-2xl shadow-lg font-black text-xs text-center border-2 border-red-700 animate-pulse flex items-center justify-center gap-2">
+        <i class="fa-solid fa-triangle-exclamation text-base"></i>
+        <span>অ্যাপে ক্যামেরা বাটন দিয়ে পার্কিং স্ক্যান করে সরাসরি এই পার্কিংয়ে রেজিস্ট্রেশন করুন!</span>
+      </div>
+
+      <div class="yellow-card p-4 rounded-3xl space-y-3 text-center bg-gradient-to-br from-yellow-50 to-white">
+        <h3 class="text-xs font-black text-slate-900 uppercase flex items-center justify-center gap-2">
+          <i class="fa-solid fa-camera text-yellow-600"></i> In-App Direct Camera Scanner
+        </h3>
+        <p class="text-[10px] text-slate-600 font-bold">নিচের ক্যামেরা বাটনে ক্লিক করে পার্কিংয়ের স্ক্যানার স্ক্যান করুন। এটি শুধুমাত্র পাবলিক পার্কিং সিস্টেমেই কাজ করবে।</p>
+        <button onclick="toggleCustomerCameraScanner()" class="w-full btn-yellow py-3.5 rounded-2xl text-xs uppercase font-black shadow-md flex items-center justify-center gap-2">
+          <i class="fa-solid fa-qrcode text-base"></i> Open Camera Scanner
+        </button>
+        <div id="customerCameraReader" class="hidden overflow-hidden rounded-2xl border-4 border-yellow-400 shadow-inner bg-black"></div>
+      </div>
+
+      <div id="custFormWrapper" class="yellow-card p-5 rounded-3xl space-y-4">
+        <div class="border-b-2 border-yellow-100 pb-2">
+          <h3 class="text-sm font-black text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-car-tunnel text-yellow-600"></i> Fast Check-in Registration
+          </h3>
+          <p class="text-[10px] text-slate-500 font-bold">Fill in vehicle details to generate entry scan</p>
+        </div>
+
+        <form id="customerBookingForm" onsubmit="handleCustomerSubmit(event)" class="space-y-3">
+          <div>
+            <label class="text-xs font-bold text-slate-700">Driver / Vehicle Owner Name *</label>
+            <input type="text" id="custName" required placeholder="Enter Full Name" class="w-full mt-1 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-700">Mobile Phone Number *</label>
+            <input type="tel" id="custPhone" required placeholder="10-digit mobile number" class="w-full mt-1 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="text-xs font-bold text-slate-700">Vehicle Reg No *</label>
+              <input type="text" id="custVehNo" required placeholder="WB 00 X 0000" class="w-full mt-1 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xs font-bold uppercase outline-none">
+            </div>
+            <div>
+              <label class="text-xs font-bold text-slate-700">Vehicle Category *</label>
+              <select id="custVehType" onchange="updateCustomerRateNotice()" class="w-full mt-1 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+                <option value="cycle">🚲 Cycle</option>
+                <option value="bike">🛵 Bike / Scooter</option>
+                <option value="toto">🛺 Auto / Toto</option>
+                <option value="ambulance">🚑 Ambulance</option>
+                <option value="car">🚗 Private Car</option>
+                <option value="bus">🚌 Bus</option>
+                <option value="truck">🚛 Truck / Lorry</option>
+                <option value="jcb">🚜 JCB / Heavy</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="custRateNoticeBox" class="p-2.5 bg-yellow-100 border border-yellow-400 rounded-xl text-xs font-bold text-amber-900">
+            Selected Category Rate: ₹10/Hour
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-700">Select Parking Lot / Room / Place *</label>
+            <select id="custParkingLotSelect" class="w-full mt-1 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+              <option value="No Parking Number">Default Lot (No Lot No)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-700 flex justify-between items-center">
+              <span>Secret Exit Passcode / OTP (4 Digits) *</span>
+              <button type="button" onclick="playPasscodeAudioGuide()" class="text-[10px] text-amber-700 font-extrabold flex items-center gap-1">
+                <i class="fa-solid fa-volume-high"></i> Audio Help
+              </button>
+            </label>
+            <input type="password" id="custSecretPass" required maxlength="4" placeholder="Create 4 Digit Passcode" class="w-full mt-1 p-3 bg-slate-50 border-2 border-slate-200 rounded-2xl text-xs font-bold outline-none">
+          </div>
+
+          <div>
+            <label class="text-xs font-bold text-slate-700">Select Estimated Duration *</label>
+            <select id="custManualDuration" class="w-full mt-1 p-3 bg-yellow-50 border-2 border-yellow-300 rounded-2xl text-xs font-bold outline-none">
+              <option value="auto">⏱️ Automatic Live Hourly Calculation</option>
+              <option value="1hr">1 Hour Duration</option>
+              <option value="1night">1 Night Stay</option>
+              <option value="1day">1 Day (24 Hours)</option>
+              <option value="7days">7 Days Pass</option>
+              <option value="15days">15 Days Pass</option>
+              <option value="1month">1 Month Subscription</option>
+            </select>
+          </div>
+
+          <button type="submit" id="custSubmitBtn" class="w-full btn-yellow py-4 rounded-2xl text-xs uppercase shadow-xl mt-2 flex justify-center items-center gap-2">
+            <i class="fa-solid fa-qrcode text-base"></i> Generate Entry Scanner (10 Mins Validity)
+          </button>
+        </form>
+      </div>
+
+      <div id="customerIssuedPass" class="hidden printable-area yellow-card p-5 rounded-3xl border-4 border-yellow-400 space-y-4">
+        <div id="digitalPassCardCanvas" class="atm-card-shape p-4 space-y-3">
+          <div class="flex justify-between items-center border-b border-yellow-300 pb-1">
+            <span id="passCardTitleLabel" class="text-[10px] font-black text-slate-900 uppercase flex items-center gap-1">
+              <i class="fa-solid fa-ticket text-amber-600"></i> ENTRY SCANNER (PENDING MANAGER CONFIRMATION)
+            </span>
+            <span id="passStatusBadge" class="bg-amber-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-full animate-pulse">PENDING ENTRY</span>
+          </div>
+
+          <div class="text-center bg-yellow-400 text-slate-950 p-1.5 rounded-xl font-black text-xs uppercase tracking-wider shadow-sm flex items-center justify-center gap-2" id="passFacilityHeaderName">
+            <div class="w-5 h-5 rounded-lg border border-yellow-600 overflow-hidden flex items-center justify-center bg-white">
+              <img id="passCardLogoImg" src="" class="hidden w-full h-full object-cover">
+              <i id="passCardLogoIcon" class="fa-solid fa-square-p text-slate-900 text-xs"></i>
+            </div>
+            <span id="passFacilityTextName">PUBLIC PARKING</span>
+          </div>
+
+          <div class="flex gap-2 items-center">
+            <div class="flex gap-1">
+              <img id="passCustVehImg" src="https://via.placeholder.com/80" class="w-10 h-10 rounded-lg object-cover border border-yellow-400 bg-white cursor-pointer" onclick="zoomImage(this.src)">
+              <img id="passCustSelfieImg" src="https://via.placeholder.com/80" class="w-10 h-10 rounded-lg object-cover border border-yellow-400 bg-white cursor-pointer" onclick="zoomImage(this.src)">
+            </div>
+            <div class="text-[11px] space-y-0.5">
+              <h4 id="passCustName" class="font-black text-slate-900">---</h4>
+              <p id="passVehNo" class="text-amber-900 font-black font-mono">---</p>
+              <p id="passLotNoDisplay" class="text-[9px] text-slate-700 font-bold">Lot: ---</p>
+              <p class="text-[10px] font-black text-red-600 bg-red-100 px-2 py-0.5 rounded inline-block">OTP: <span id="passOtpDisplay">----</span></p>
+            </div>
+          </div>
+
+          <div class="bg-white p-3 rounded-2xl flex flex-col items-center justify-center shadow-inner border border-yellow-300">
+            <p id="qrInstructionLabel" class="text-[10px] font-black text-red-600 mb-1 uppercase">পার্কিং ম্যানেজারের কাছে প্রথম স্ক্যানার স্ক্যান করান (10 Mins Limit)</p>
+            <div id="customerQrContainer" class="qr-box-clear"></div>
+            <p id="entryTimerDisplay" class="text-[10px] font-mono font-bold text-amber-800 mt-1">Time Left: 10:00</p>
+          </div>
+
+          <!-- EXIT BILLING AMOUNT DISPLAY ON PASS CARD -->
+          <div id="passCardExitBillingBox" class="hidden bg-emerald-100 border-2 border-emerald-400 p-2 rounded-xl text-center space-y-0.5">
+            <p class="text-[9px] font-black text-emerald-900 uppercase">প্রদেয় পার্কিং বিল (Current Exit Bill)</p>
+            <p id="passCardExitBillAmount" class="text-xl font-black text-emerald-700">₹0</p>
+            <p id="passCardExitBillTime" class="text-[8px] font-bold text-slate-600">সময়: --</p>
+          </div>
+        </div>
+
+        <div class="yellow-card p-3 rounded-2xl space-y-2">
+          <p class="text-xs font-black text-slate-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-map-location-dot text-amber-600"></i> Live Parking GPS Location Map
+          </p>
+          <div id="liveGpsMapContainer"></div>
+        </div>
+
+        <button onclick="downloadDigitalPassImage()" class="no-print w-full btn-yellow py-3.5 rounded-2xl text-xs uppercase font-black shadow-lg flex justify-center items-center gap-2">
+          <i class="fa-solid fa-file-arrow-down text-base"></i> One-Click Download Digital ATM Card
+        </button>
+
+        <p class="text-[10px] text-center font-bold text-slate-600 no-print">Show this Entry QR Code to Manager within 10 minutes to activate parking.</p>
+      </div>
+    </section>
+
+    <!-- 5. SUPER ADMIN MODALS & CONTROL PANEL -->
+    <div id="adminAuthModal" class="hidden fixed inset-0 bg-yellow-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white p-5 rounded-3xl border-4 border-yellow-400 w-full max-w-sm space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-lock text-yellow-600"></i> Super Admin Access
+          </h3>
+          <button onclick="closeAdminAuthModal()" class="text-slate-400 hover:text-black"><i class="fa-solid fa-xmark text-base"></i></button>
+        </div>
+        <input type="password" id="adminSecurityPassInput" placeholder="Enter Admin Password" class="w-full p-3 bg-yellow-50 border-2 border-yellow-300 rounded-2xl text-xs font-bold outline-none">
+        <button onclick="verifyAdminPassword()" class="w-full btn-yellow py-3 rounded-2xl text-xs uppercase font-black shadow-md">Unlock Control Panel</button>
+      </div>
+    </div>
+
+    <div id="superAdminModal" class="hidden fixed inset-0 bg-yellow-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white p-5 rounded-3xl border-4 border-yellow-400 w-full max-w-sm space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-user-gear text-yellow-600"></i> Main Admin Control Panel
+          </h3>
+          <button onclick="closeAdminModal()" class="text-slate-400 hover:text-black"><i class="fa-solid fa-xmark text-base"></i></button>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <label class="text-xs font-bold text-slate-700">App Global Brand Logo Update</label>
+            <input type="file" id="adminGlobalLogoInput" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:bg-yellow-400">
+            <button onclick="saveGlobalLogo()" class="w-full btn-yellow py-2 mt-1 rounded-xl text-xs uppercase shadow-sm">Save & Set Logo All Over App</button>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <!-- SUPER ADMIN DATA CLEAR BUTTON -->
+          <div class="bg-red-50 p-3 rounded-2xl border-2 border-red-300 space-y-2">
+            <p class="text-xs font-black text-red-700 uppercase"><i class="fa-solid fa-triangle-exclamation"></i> Old Data & Parking Clear Panel</p>
+            <p class="text-[10px] text-slate-600">পুরানো ডেটা, পার্কিং, এজেন্ট বা বুকিং তালিকা সম্পূর্ণ রিসেট বা ডিলিট করতে নিচে ক্লিক করুন:</p>
+            <button onclick="superAdminClearAllSystemData()" class="w-full bg-red-600 text-white font-black py-2 rounded-xl text-xs uppercase shadow-md">
+              <i class="fa-solid fa-trash"></i> Delete / Clear All System Data
+            </button>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <div class="space-y-3 bg-amber-50 p-3 rounded-2xl border-2 border-amber-400">
+            <p class="text-xs font-black text-amber-950 uppercase">🏢 Subscription Waiting Approvals (ওনার সাবস্ক্রিপশন কনফার্মেশন)</p>
+            <div id="adminSubscriptionWaitingList" class="space-y-2 max-h-48 overflow-y-auto">
+              <p class="text-xs text-slate-400 text-center py-2">No pending subscription requests.</p>
+            </div>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <div class="space-y-2 bg-yellow-50 p-3 rounded-2xl border border-yellow-300">
+            <p class="text-xs font-black text-amber-950 uppercase">Subscription & Fee Controls (Fixed ₹13 + Tax)</p>
+            <div>
+              <label class="text-[10px] font-bold text-slate-700">Daily Subscription Base Rate (Min ₹13)</label>
+              <input type="number" id="adminBaseSubPrice" value="13" min="13" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-700">GST Fee (%)</label>
+              <input type="number" id="adminGstFee" value="18" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+            </div>
+            <div>
+              <label class="text-[10px] font-bold text-slate-700">Platform Convenience Fee (₹)</label>
+              <input type="number" id="adminPlatformFee" value="2" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+            </div>
+            <button onclick="saveAdminFeeSettings()" class="w-full bg-amber-600 text-white font-black py-2 rounded-xl text-xs uppercase shadow-sm">Save Fee Settings</button>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <div class="space-y-3 bg-yellow-50 p-3 rounded-2xl border border-yellow-300">
+            <p class="text-xs font-black text-amber-950 uppercase">Agent Withdrawal Requests (পেন্ডিং উইথড্র)</p>
+            <div id="adminAgentWithdrawalsList" class="space-y-2 max-h-40 overflow-y-auto">
+              <p class="text-xs text-slate-400 text-center py-2">No withdrawal requests.</p>
+            </div>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <div class="space-y-3 bg-yellow-50 p-3 rounded-2xl border border-yellow-300">
+            <p class="text-xs font-black text-amber-950 uppercase">Payment Systems Configuration</p>
+
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-700">Option 1: Third-Party Gateway Key / Merchant ID (Razorpay/PhonePe/Paytm)</label>
+              <input type="text" id="adminGatewayKeyInput" placeholder="Enter Merchant Key ID" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-700">Option 2: Admin Direct Payment QR Scanner Image</label>
+              <input type="file" id="adminQrFileInput" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:bg-yellow-400">
+            </div>
+
+            <div class="space-y-1">
+              <label class="text-[10px] font-bold text-slate-700">Option 3: System Manual UPI ID</label>
+              <input type="text" id="adminUpiInput" placeholder="e.g. 8343088730@paytm" class="w-full p-2 bg-white border border-slate-300 rounded-xl text-xs font-bold">
+            </div>
+
+            <button onclick="savePaymentSystemSettings()" class="w-full btn-yellow py-2.5 rounded-xl text-xs uppercase font-black shadow-sm">Save Payment Systems</button>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <p class="text-xs font-black text-slate-800">Pending & Approved Agents</p>
+          <div id="adminAgentsList" class="space-y-2 max-h-48 overflow-y-auto">
+            <p class="text-xs text-slate-400 text-center py-2">No agent applications.</p>
+          </div>
+
+          <hr class="border-yellow-200">
+
+          <p class="text-xs font-black text-slate-800">All Registered Parkings & Pending Approvals</p>
+          <div id="adminRegisteredParkingsList" class="space-y-2 max-h-48 overflow-y-auto">
+            <p class="text-xs text-slate-400 text-center py-4">No parkings found.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="managerIdCardModal" class="hidden fixed inset-0 bg-yellow-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white p-5 rounded-3xl border-4 border-yellow-400 w-full max-w-sm space-y-4 shadow-2xl text-center printable-area">
+        <div class="flex justify-between items-center border-b pb-2 no-print">
+          <h3 class="font-black text-xs text-slate-900">Manager Digital Pass</h3>
+          <button onclick="closeManagerIdModal()" class="text-slate-400 hover:text-black"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div id="managerIdCardCanvas" class="atm-card-shape p-4 space-y-2 text-center flex flex-col items-center justify-center">
+          <img id="idCardPhoto" src="" class="w-16 h-16 rounded-full object-cover border-2 border-yellow-400 shadow-md">
+          <div class="space-y-0.5">
+            <h2 id="idCardName" class="font-black text-sm text-slate-900">---</h2>
+            <p id="idCardPhone" class="text-[10px] font-bold text-amber-800">---</p>
+            <p id="idCardAge" class="text-[9px] font-bold text-slate-600">---</p>
+            <p id="idCardAddress" class="text-[9px] font-semibold text-slate-500">---</p>
+          </div>
+          <div class="pt-1 border-t border-yellow-300 w-full">
+            <p class="text-[8px] font-black uppercase text-slate-900">Authorized Gate Manager ID</p>
+          </div>
+        </div>
+
+        <button onclick="downloadManagerIdCardImage()" class="no-print w-full bg-amber-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md flex justify-center items-center gap-2">
+          <i class="fa-solid fa-download"></i> Download Digital ID Image
+        </button>
+      </div>
+    </div>
+
+    <div id="agentIdCardModal" class="hidden fixed inset-0 bg-yellow-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white p-5 rounded-3xl border-4 border-yellow-400 w-full max-w-sm space-y-4 shadow-2xl text-center printable-area">
+        <div class="flex justify-between items-center border-b pb-2 no-print">
+          <h3 class="font-black text-xs text-slate-900">Agent ATM Digital ID</h3>
+          <button onclick="closeAgentIdModal()" class="text-slate-400 hover:text-black"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div id="agentIdCardCanvas" class="atm-card-shape p-4 space-y-2 text-center flex flex-col items-center justify-center">
+          <img id="agentIdCardPhoto" src="" class="w-16 h-16 rounded-full object-cover border-2 border-yellow-400 shadow-md">
+          <div class="space-y-0.5">
+            <h2 id="agentIdCardName" class="font-black text-sm text-slate-900">---</h2>
+            <p id="agentIdCardCode" class="text-[10px] font-bold text-amber-900">---</p>
+            <p id="agentIdCardPhone" class="text-[10px] font-bold text-slate-800">---</p>
+            <p id="agentIdCardLocation" class="text-[9px] font-semibold text-slate-500">---</p>
+          </div>
+          <div class="pt-1 border-t border-yellow-300 w-full">
+            <p class="text-[8px] font-black uppercase text-slate-900">OFFICIAL PUBLIC PARKING FIELD AGENT</p>
+          </div>
+        </div>
+
+        <button onclick="downloadAgentIdCardImage()" class="no-print w-full bg-amber-600 text-white font-black py-3 rounded-2xl text-xs uppercase shadow-md flex justify-center items-center gap-2">
+          <i class="fa-solid fa-download"></i> Download Agent ATM Card
+        </button>
+      </div>
+    </div>
+
+    <div id="universalShareModal" class="hidden fixed inset-0 bg-yellow-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white p-5 rounded-3xl border-4 border-yellow-400 w-full max-w-sm space-y-4 shadow-2xl text-center">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-share-nodes text-yellow-600"></i> Universal Share & Scan
+          </h3>
+          <button onclick="closeUniversalShareModal()" class="text-slate-400 hover:text-black"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="bg-white p-3 rounded-2xl border-2 border-yellow-300 flex flex-col items-center justify-center shadow-inner">
+          <div id="universalShareQrBox" class="qr-box-clear"></div>
+          <p class="text-[10px] font-mono text-slate-600 mt-2">Scan QR to Open Application</p>
+        </div>
+
+        <button onclick="shareDirectWhatsappAppUrl()" class="w-full bg-emerald-600 text-white font-black py-3.5 rounded-2xl text-xs uppercase shadow-md flex justify-center items-center gap-2">
+          <i class="fa-brands fa-whatsapp text-lg"></i> Direct 1-Click WhatsApp Share
+        </button>
+      </div>
+    </div>
+
+    <div id="rechargeModal" class="hidden fixed inset-0 bg-yellow-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+      <div class="bg-white p-5 rounded-3xl border-4 border-yellow-400 w-full max-w-sm space-y-4 shadow-2xl">
+        <div class="flex justify-between items-center border-b pb-2">
+          <h3 class="font-black text-sm text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-qrcode text-yellow-600"></i> Parking Recharge (₹13/Day + Tax)
+          </h3>
+          <button onclick="closeRechargeModal()" class="text-slate-400 hover:text-black"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="space-y-3 text-center">
+          <div>
+            <label class="text-xs font-bold text-slate-700 block text-left">Select Validity Period:</label>
+            <select id="rechargeDaysSelect" onchange="updateRechargeAmountDisplay()" class="w-full mt-1 p-3 bg-yellow-50 border-2 border-yellow-300 rounded-2xl text-xs font-bold">
+              <option value="1">1 Day (₹13 + Tax)</option>
+              <option value="7">7 Days (₹91 + Tax)</option>
+              <option value="15">15 Days (₹195 + Tax)</option>
+              <option value="30">1 Month (₹390 + Tax)</option>
+            </select>
+          </div>
+
+          <div class="bg-white p-3 rounded-2xl border-2 border-yellow-300 flex justify-center qr-box-clear">
+            <div id="rechargeQrBox"></div>
+          </div>
+          <p id="adminUpiDisplay" class="text-xs font-black font-mono text-slate-900">UPI: --</p>
+
+          <div>
+            <label class="text-xs font-bold text-slate-700 block text-left">Upload Payment Screenshot *</label>
+            <input type="file" id="rechargeScreenshotInput" accept="image/*" class="w-full mt-1 text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-yellow-400">
+          </div>
+
+          <button onclick="submitRechargeProofAndRedirectWhatsapp()" class="w-full yellow-gradient text-slate-950 font-black py-3.5 rounded-2xl text-xs uppercase shadow-md flex items-center justify-center gap-2">
+            <i class="fa-brands fa-whatsapp text-base text-emerald-800"></i> Submit & Send WhatsApp SMS (8343088730)
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Mobile App Bottom Navigation Bar -->
+  <nav class="mobile-bottom-nav">
+    <div class="nav-item active" onclick="switchPortal('customer'); updateNavActive(this)">
+      <i class="fa-solid fa-car"></i>
+      <span>Customer</span>
+    </div>
+    <div class="nav-item" onclick="switchPortal('manager'); updateNavActive(this)">
+      <i class="fa-solid fa-mobile-screen"></i>
+      <span>Manager</span>
+    </div>
+    <div class="nav-item" onclick="switchPortal('owner'); updateNavActive(this)">
+      <i class="fa-solid fa-building-shield"></i>
+      <span>Owner</span>
+    </div>
+    <div class="nav-item" onclick="switchPortal('agent'); updateNavActive(this)">
+      <i class="fa-solid fa-user-secret"></i>
+      <span>Agent</span>
+    </div>
+  </nav>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        const swCode = `
+          const CACHE_NAME = 'public-parking-v15.0';
+          self.addEventListener('install', (e) => { self.skipWaiting(); });
+          self.addEventListener('activate', (e) => { e.waitUntil(clients.claim()); });
+          self.addEventListener('fetch', (e) => { e.respondWith(fetch(e.request).catch(() => caches.match(e.request))); });
+        `;
+        const blob = new Blob([swCode], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(blob));
+      });
+    }
+
+    let audioEnabled = true;
+    let audioVolume = 1.0;
+
+    function enableAudioPlay() { audioEnabled = true; }
+    function toggleAudioMute() {
+      audioEnabled = !audioEnabled;
+      const icon = document.getElementById('audioIcon');
+      icon.className = audioEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark";
+      if (!audioEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+    }
+    function changeAudioVolume() {
+      audioVolume = audioVolume === 1.0 ? 0.5 : (audioVolume === 0.5 ? 0.2 : 1.0);
+      showDigitalNotification('AUDIO VOLUME', `ভলিউম লেভেল: ${Math.round(audioVolume * 100)}%`, true);
+    }
+
+    function speakText(text, lang = 'bn-IN') {
+      if (!audioEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = lang;
+      utterance.rate = 0.95;
+      utterance.volume = audioVolume;
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function speakHindiText(text) {
+      speakText(text, 'hi-IN');
+    }
+
+    function playPasscodeAudioGuide() {
+      speakHindiText('इस सीक्रेट पासवर्ड को ध्यान से याद रखें। अगर आपका फोन बंद हो जाता है, तो इस पासवर्ड के द्वारा अपनी गाड़ी बाहर निकाल सकते हैं।');
+    }
+
+    function playOwnerAudioGuide() {
+      speakText('স্বাগতম ওনার প্যানেলে। এখানে আপনি পার্কিং এর রেট সেট করতে পারবেন, ম্যানেজার আইডি তৈরি করতে পারবেন, এবং ১২ ঘণ্টার ডেইলি শিফট ওয়ালেটে আয় দেখতে পারবেন।');
+    }
+
+    function playManagerAudioGuide() {
+      speakText('স্বাগতম গেট ম্যানেজার প্যানেলে। ক্যামেরা স্ক্যানার চালু করে কাস্টমারের এন্ট্রি কিউ আর কোড স্ক্যান করুন, গাড়ি ইন করার সময়। গাড়ি আউট করার সময় কাস্টমারের ৪ সংখ্যার ওটিপি নিয়ে ইনপুট করুন।');
+    }
+
+    function playCustomerAudioGuide() {
+      speakText('পাবলিক পার্কিং বুকিং প্যানেলে আপনাকে স্বাগতম। গাড়ি পার্ক করতে আপনার নাম, মোবাইল নম্বর এবং গাড়ির নম্বর দিয়ে ওটিপি বা পাসকোড সেট করুন এবং জেনারেট কিউ আর কোড চাপুন।');
+    }
+
+    /* 3-Second Vibrant Color Shifting (Excluding Pure Black) */
+    const vibrantColorThemes = [
+      { bg: 'linear-gradient(180deg, #fffbeb 0%, #fef3c7 50%, #fde047 100%)' },
+      { bg: 'linear-gradient(180deg, #f0fdf4 0%, #dcfce7 50%, #86efac 100%)' },
+      { bg: 'linear-gradient(180deg, #eff6ff 0%, #dbeafe 50%, #93c5fd 100%)' },
+      { bg: 'linear-gradient(180deg, #fdf4ff 0%, #fae8ff 50%, #f0abfc 100%)' },
+      { bg: 'linear-gradient(180deg, #fff1f2 0%, #ffe4e6 50%, #fda4af 100%)' },
+      { bg: 'linear-gradient(180deg, #fefce8 0%, #fef08a 50%, #eab308 100%)' }
+    ];
+    let colorThemeIndex = 0;
+    setInterval(() => {
+      colorThemeIndex = (colorThemeIndex + 1) % vibrantColorThemes.length;
+      document.body.style.background = vibrantColorThemes[colorThemeIndex].bg;
+    }, 3000);
+
+    function showDigitalNotification(title, message, isSuccess = true) {
+      const modal = document.getElementById('digitalAppNotifyModal');
+      const border = document.getElementById('notifyCardBorder');
+      const iconBox = document.getElementById('notifyIconBox');
+      const icon = document.getElementById('notifyIcon');
+      const titleElem = document.getElementById('notifyTitle');
+      const msgElem = document.getElementById('notifyMessage');
+
+      titleElem.innerText = title;
+      msgElem.innerText = message;
+
+      if (isSuccess) {
+        border.className = "notify-card border-4 border-emerald-500";
+        iconBox.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-emerald-100 text-emerald-600 shadow-lg";
+        icon.className = "fa-solid fa-check";
+      } else {
+        border.className = "notify-card border-4 border-red-500";
+        iconBox.className = "w-20 h-20 mx-auto rounded-full flex items-center justify-center text-4xl mb-4 bg-red-100 text-red-600 shadow-lg";
+        icon.className = "fa-solid fa-xmark";
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeDigitalNotification() {
+      document.getElementById('digitalAppNotifyModal').classList.remove('active');
+    }
+
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      document.getElementById('pwaBanner')?.classList.remove('hidden');
+    });
+
+    function triggerPwaInstall() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => { dismissPwaBanner(); deferredPrompt = null; });
+      }
+    }
+
+    function dismissPwaBanner() {
+      document.getElementById('pwaBanner')?.classList.add('hidden');
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDJmu9uD5rT5ee1jNLpMQaTVIa_-yTrPzw",
+      authDomain: "public-service-11054.firebaseapp.com",
+      databaseURL: "https://public-service-11054-default-rtdb.firebaseio.com",
+      projectId: "public-service-11054",
+      storageBucket: "public-service-11054.firebasestorage.app",
+      messagingSenderId: "639313474404",
+      appId: "1:639313474404:web:9ac4645e521021c044c071"
+    };
+
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let activeParkingId = localStorage.getItem('app_active_parking_id') || '';
+    let currentOwnerPhotoBase64 = '';
+    let currentGlobalLogoBase64 = '';
+    let currentCustPhotoBase64 = '';
+    let currentCustSelfieBase64 = '';
+    let currentMgrPhotoBase64 = '';
+    let currentAgentPhotoBase64 = '';
+    let currentRechargeProofBase64 = '';
+    let currentAdminQrBase64 = '';
+    let html5QrcodeScanner = null;
+    let customerScannerInstance = null;
+    let logoClickCounter = 0;
+    let selectedExitPayMode = 'CASH';
+    let currentActiveBookingData = null;
+    let currentManagerPhone = localStorage.getItem('mgr_phone') || '';
+    let currentManagerFacilityId = localStorage.getItem('mgr_facility_id') || '';
+    let currentAgentPhone = localStorage.getItem('agent_phone') || '';
+    let currentAgentId = localStorage.getItem('agent_id') || '';
+    let entryTimerInterval = null;
+
+    function generateCleanQR(containerId, text) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = '';
+      if (!text) return;
+      
+      try {
+        new QRCode(container, {
+          text: text,
+          width: 180,
+          height: 180,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.error("QR Generation error:", err);
+      }
+    }
+
+    function compressPhotoAsync(fileInput, maxWidth = 300, quality = 0.5) {
+      return new Promise((resolve) => {
+        const file = fileInput.files && fileInput.files[0];
+        if (!file) return resolve('');
+
+        const reader = new FileReader();
+        reader.onerror = () => resolve('');
+        reader.onload = function(e) {
+          const img = new Image();
+          img.onerror = () => resolve('');
+          img.onload = function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // --- NEW ADDED / UPDATED FEATURES LOGIC ---
+
+    // 1. Manual File Image Scan Engine for Manager QR Scanner
+    function scanQrFromImageFile(input) {
+      if (!input.files || !input.files[0]) return;
+      const file = input.files[0];
+      const html5QrCode = new Html5Qrcode("managerReader");
+      html5QrCode.scanFile(file, true)
+        .then(decodedText => {
+          handleManagerScanResult(decodedText);
+        })
+        .catch(err => {
+          showDigitalNotification("SCAN FAILED", "ছবিতে কোনো বৈধ QR কোড পাওয়া যায়নি!", false);
+        });
+    }
+
+    // 2. Automated Tiered Rate Calculation (12 Hrs / Day System)
+    function calculateParkingFee(category, inTime, outTime) {
+      const diffMs = outTime - inTime;
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      // Default Base Rates per Category
+      const defaultRates = {
+        cycle: { hr: 5, night: 20, day: 40 },
+        bike: { hr: 10, night: 50, day: 100 },
+        toto: { hr: 15, night: 60, day: 120 },
+        ambulance: { hr: 20, night: 100, day: 200 },
+        car: { hr: 20, night: 100, day: 200 },
+        bus: { hr: 50, night: 200, day: 400 },
+        truck: { hr: 50, night: 200, day: 400 },
+        jcb: { hr: 60, night: 250, day: 500 }
+      };
+
+      const rate = defaultRates[category] || defaultRates.car;
+
+      if (diffHours <= 12) {
+        // Less than 12 hours: Calculate in 3-hour slabs
+        const slab3hrCount = Math.max(1, Math.ceil(diffHours / 3));
+        return slab3hrCount * (rate.hr * 3);
+      } else {
+        // More than 12 hours: Day based billing
+        const days = Math.ceil(diffHours / 24);
+        return days * rate.day;
+      }
+    }
+
+    // 3. Audio Prompt on Second (Exit) QR Generation / Exit View
+    function triggerExitAudioPrompt() {
+      const msg = "স্ক্যানারটি স্ক্রিনশট নিয়ে রাখুন অথবা ডাউনলোড করে নিন। গাড়ি বের করার সময় এই স্ক্যানারটি লাগবে অথবা আপনার ৪ সংখ্যার সিগরেট কোড বলতে হবে।";
+      speakText(msg);
+    }
+
+    // 4. 12-Hour Shift Schedule Wallet Timer Engine (06:00 AM - 12:00 AM)
+    function startShiftWalletTimer() {
+      setInterval(() => {
+        const now = new Date();
+        const midnight = new Date();
+        midnight.setHours(24, 0, 0, 0);
+        const diff = midnight - now;
+
+        const hrs = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+        const mins = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+        const secs = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+
+        const badge = document.getElementById('shiftWalletTimerBadge');
+        if (badge) badge.innerText = `Reset Countdown: ${hrs}:${mins}:${secs}`;
+      }, 1000);
+    }
+
+    // 5. WhatsApp Referral SMS Generator for Agents
+    function shareAgentLinkWhatsapp() {
+      const agentCode = currentAgentId || 'AGENT' + Math.floor(1000 + Math.random() * 9000);
+      const text = encodeURIComponent(`আমি পাব্লিক পার্কিং অ্যাপে রেজিস্ট্রেশন করতে চাই, আমাকে অ্যাপ্লিকেশন ও ডিটেলস পাঠান। Agent Ref Code: ${agentCode}`);
+      window.open(`https://wa.me/?text=${text}`, '_blank');
+    }
+
+    // Realtime Manager Scan Handler with In/Out Double Scan System
+    function handleManagerScanResult(qrData) {
+      if (!activeParkingId) return;
+
+      db.ref(`parkings/${activeParkingId}/bookings/${qrData}`).once('value', snapshot => {
+        const booking = snapshot.val();
+        if (!booking) {
+          showDigitalNotification("INVALID QR", "কোনো রেকর্ড পাওয়া যায়নি!", false);
+          return;
+        }
+
+        if (booking.status === 'PENDING') {
+          // First Scan: Entry Scan
+          db.ref(`parkings/${activeParkingId}/bookings/${qrData}`).update({
+            status: 'PARKED',
+            actualInTime: Date.now()
+          }).then(() => {
+            showDigitalNotification("CONFIRMED IN", "গাড়ি পার্কিং এ স্বাগতম! (IN Confirmed)", true);
+            speakText("গাড়ি ইন করা সফল হয়েছে");
+            triggerExitAudioPrompt();
+            loadLiveParkings();
+          });
+        } else if (booking.status === 'PARKED') {
+          // Second Scan: Exit Scan
+          const inTime = booking.actualInTime || booking.timestamp || Date.now();
+          const outTime = Date.now();
+          const totalBill = calculateParkingFee(booking.category || 'car', inTime, outTime);
+
+          currentActiveBookingData = { ...booking, bookingId: qrData, calculatedBill: totalBill };
+
+          document.getElementById('managerLargeAmountDisplay').innerText = `₹${totalBill}`;
+          document.getElementById('exitSummaryContent').innerHTML = `
+            <p><b>Driver:</b> ${booking.name}</p>
+            <p><b>Vehicle No:</b> ${booking.vehNo}</p>
+            <p><b>Category:</b> ${(booking.category || 'car').toUpperCase()}</p>
+            <p><b>Calculated Bill:</b> ₹${totalBill}</p>
+          `;
+
+          document.getElementById('exitPaymentCard').classList.remove('hidden');
+          showDigitalNotification("CONFIRMED OUT", `গাড়ি আউট প্রস্তুত! প্রদেয় বিল: ₹${totalBill}`, true);
+          speakText(`গাড়ি বের করার জন্য মোট বিল ${totalBill} টাকা`);
+        }
+      });
+    }
+
+    function confirmVehicleExitProcess() {
+      if (!currentActiveBookingData || !activeParkingId) return;
+
+      const bk = currentActiveBookingData;
+      const bill = bk.calculatedBill || 0;
+
+      db.ref(`parkings/${activeParkingId}/history/${bk.bookingId}`).set({
+        ...bk,
+        status: 'EXITED',
+        exitTime: Date.now(),
+        finalBill: bill,
+        payMode: selectedExitPayMode
+      });
+
+      db.ref(`parkings/${activeParkingId}/bookings/${bk.bookingId}`).remove().then(() => {
+        showDigitalNotification("EXIT COMPLETE", "পেমেন্ট গ্রহণ করা হয়েছে ও গাড়ি স্থান ত্যাগ করেছে!", true);
+        speakText("পেমেন্ট সফল হয়েছে। ধন্যবাদ।");
+        document.getElementById('exitPaymentCard').classList.add('hidden');
+        currentActiveBookingData = null;
+        loadLiveParkings();
+        loadShiftWalletData();
+      });
+    }
+
+    function switchPortal(portal) {
+      ['ownerPortal', 'managerPortal', 'agentPortal', 'customerPortal'].forEach(p => {
+        const el = document.getElementById(p);
+        if (el) el.classList.add('hidden');
+      });
+      const activeEl = document.getElementById(`${portal}Portal`);
+      if (activeEl) activeEl.classList.remove('hidden');
+      document.getElementById('portalSelector').value = portal;
+    }
+
+    function updateNavActive(elem) {
+      document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+      elem.classList.add('active');
+    }
+
+    function handleLogoClick() {
+      logoClickCounter++;
+      if (logoClickCounter >= 5) {
+        logoClickCounter = 0;
+        document.getElementById('adminAuthModal').classList.remove('hidden');
+      }
+    }
+
+    function closeAdminAuthModal() {
+      document.getElementById('adminAuthModal').classList.add('hidden');
+    }
+
+    function verifyAdminPassword() {
+      const pass = document.getElementById('adminSecurityPassInput').value;
+      if (pass === 'admin123') {
+        closeAdminAuthModal();
+        document.getElementById('superAdminModal').classList.remove('hidden');
+      } else {
+        showDigitalNotification("ACCESS DENIED", "ভুল অ্যাডমিন পাসওয়ার্ড!", false);
+      }
+    }
+
+    function closeAdminModal() {
+      document.getElementById('superAdminModal').classList.add('hidden');
+    }
+
+    function loadLiveParkings() {
+      if (!activeParkingId) return;
+      db.ref(`parkings/${activeParkingId}/bookings`).on('value', snapshot => {
+        const list = document.getElementById('liveParkingLogsList');
+        if (!list) return;
+        list.innerHTML = '';
+        let count = 0;
+        snapshot.forEach(child => {
+          const val = child.val();
+          if (val.status === 'PARKED') {
+            count++;
+            const item = document.createElement('div');
+            item.className = "p-3 bg-white border border-yellow-300 rounded-2xl flex justify-between items-center text-xs font-bold shadow-sm";
+            item.innerHTML = `
+              <div>
+                <p class="text-slate-900 font-black">${val.vehNo} (${(val.category || 'car').toUpperCase()})</p>
+                <p class="text-[10px] text-slate-500">${val.name} | Lot: ${val.lot || 'N/A'}</p>
+              </div>
+              <span class="bg-emerald-100 text-emerald-800 text-[9px] px-2 py-0.5 rounded-full font-black">PARKED</span>
+            `;
+            list.appendChild(item);
+          }
+        });
+        document.getElementById('liveVehicleCounter').innerText = `${count} Vehicles`;
+      });
+    }
+
+    function loadShiftWalletData() {
+      if (!activeParkingId) return;
+      db.ref(`parkings/${activeParkingId}/history`).once('value', snapshot => {
+        let totalRev = 0;
+        let cashRev = 0;
+        let onlineRev = 0;
+        let inCount = 0;
+        let outCount = snapshot.numChildren();
+
+        snapshot.forEach(child => {
+          const val = child.val();
+          const amt = Number(val.finalBill || 0);
+          totalRev += amt;
+          if (val.payMode === 'UPI') onlineRev += amt;
+          else cashRev += amt;
+        });
+
+        document.getElementById('shiftWalletIncome').innerText = `₹${totalRev}`;
+        document.getElementById('shiftCashIncome').innerText = `₹${cashRev}`;
+        document.getElementById('shiftOnlineIncome').innerText = `₹${onlineRev}`;
+        document.getElementById('shiftOutVehicles').innerText = outCount;
+        document.getElementById('statTotalIncome').innerText = `₹${totalRev}`;
+      });
+    }
+
+    window.onload = function() {
+      setTimeout(() => {
+        const splash = document.getElementById('splashOverlay');
+        if (splash) {
+          splash.style.opacity = '0';
+          setTimeout(() => splash.style.display = 'none', 800);
+        }
+      }, 1500);
+
+      startShiftWalletTimer();
+      if (activeParkingId) {
+        loadLiveParkings();
+        loadShiftWalletData();
+      }
+    };
+  </script>
+</body>
+</html>
